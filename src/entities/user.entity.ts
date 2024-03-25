@@ -2,7 +2,7 @@ import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 import { CommonEntity } from './common.entity';
 
 @Entity('User')
-export class User extends CommonEntity {
+export class UserEntity extends CommonEntity {
   @PrimaryGeneratedColumn({ name: 'user_id' })
   userId: number;
 
