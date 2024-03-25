@@ -16,8 +16,8 @@ export class EmailService {
     this.transporter = nodemailer.createTransport({
       service: 'naver',
       auth: {
-        user: 'lilk000011@naver.com',
-        pass: 'asas0011!',
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
       },
     });
   }
@@ -27,7 +27,7 @@ export class EmailService {
     verifyToken: string,
   ): Promise<void> {
     const emailOptions: EmailOptions = {
-      from: 'lilk000011@naver.com',
+      from: process.env.EMAIL_USER,
       to: email,
       subject: '가입 인증 메일',
       html: `<h1> 인증 코드를 입력하면 가입 인증이 완료됩니다.</h1><br/>${verifyToken}`,
