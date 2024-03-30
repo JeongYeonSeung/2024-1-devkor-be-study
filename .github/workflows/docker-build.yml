@@ -9,7 +9,7 @@ env:
   DOCKER_CONTAINER: study
 
 jobs:
-  test:
+  build:
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout Source Code
