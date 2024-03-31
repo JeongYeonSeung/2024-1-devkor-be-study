@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserEntity } from 'src/entities/user.entity';
 import { Repository } from 'typeorm';
@@ -29,15 +33,58 @@ export class AuthService {
 
     return {
       id: user.userId,
-      email: user.email,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
     };
   }
 
-  async logIn(user) {
-    return {
-      accessToken: this.jwtService.sign(user),
+  async getToken(id: number) {
+    const user = await this.userRepository.findOne({ where: { userId: id } });
+    if (!user) throw new UnauthorizedException('존재하지 않는 유저입니다.');
+
+    const payload = {
+      id,
+      email: user.email,
+      signedAt: Date.now().toString(),
     };
+    const accessToken = this.jwtService.sign(payload, {
+      expiresIn: '30m',
+      secret: process.env.JWT_SECRET,
+    });
+    const refreshToken = this.jwtService.sign(payload, {
+      expiresIn: '30d',
+      secret: process.env.JWT_SECRET,
+    });
+
+    // refreshToken을 user table에 저장
+    user.refreshToken = refreshToken;
+    await this.userRepository.save(user);
+
+    return { accessToken, refreshToken };
+  }
+
+  async refreshJWT(id: number, refreshToken: string) {
+    const user = await this.userRepository.findOne({ where: { userId: id } });
+    if (!user) throw new UnauthorizedException('존재하지 않는 유저입니다.');
+
+    if (user.refreshToken !== refreshToken)
+      throw new UnauthorizedException('Invalid refresh token');
+
+    const payload = {
+      id,
+      email: user.email,
+      signedAt: Date.now().toString(),
+    };
+
+    const accessToken = this.jwtService.sign(payload, {
+      expiresIn: '30m',
+      secret: process.env.JWT_SECRET,
+    });
+    const newRefreshToken = this.jwtService.sign(payload, {
+      expiresIn: '30d',
+      secret: process.env.JWT_SECRET,
+    });
+
+    user.refreshToken = newRefreshToken;
+    await this.userRepository.save(user);
+    return { accessToken, refreshToken: newRefreshToken };
   }
 }
