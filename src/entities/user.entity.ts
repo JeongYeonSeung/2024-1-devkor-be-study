@@ -14,4 +14,7 @@ export class UserEntity extends CommonEntity {
 
   @Column('varchar', { name: 'password', unique: false, nullable: false })
   password: string;
+
+  @Column('varchar', { name: 'refresh_token', nullable: true })
+  refreshToken: string;
 }
