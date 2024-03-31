@@ -47,12 +47,18 @@ export class UserService {
     if (existedEmailToken) {
       existedEmailToken.token = verifyToken;
       existedEmailToken.isVerified = false;
+      const currentTime = new Date();
+      existedEmailToken.expiredTime = new Date(
+        currentTime.getTime() + 3 * 60000,
+      );
       await this.emailTokenRepository.save(existedEmailToken);
     } else {
       const emailToken = new EmailTokenEntity();
       emailToken.email = email;
       emailToken.token = verifyToken;
       emailToken.isVerified = false;
+      const currentTime = new Date();
+      emailToken.expiredTime = new Date(currentTime.getTime() + 3 * 60000);
       await this.emailTokenRepository.save(emailToken);
     }
 
@@ -67,10 +73,16 @@ export class UserService {
 
     if (!emailToken) {
       throw new BadRequestException('인증 코드가 일치하지 않습니다.');
-    } else {
-      emailToken.isVerified = true;
-      await this.emailTokenRepository.save(emailToken);
     }
+    const currentTime = new Date();
+    if (emailToken.expiredTime < currentTime) {
+      throw new BadRequestException('인증 코드가 만료되었습니다.');
+    }
+
+    emailToken.isVerified = true;
+    // 인증 성공 후 10분이 지나면 재인증 필요하게 구현
+    emailToken.expiredTime = new Date(currentTime.getTime() + 10 * 60000);
+    await this.emailTokenRepository.save(emailToken);
 
     return true;
   }
@@ -95,12 +107,25 @@ export class UserService {
       throw new BadRequestException('비밀번호는 특수문자를 포함해야 합니다.');
     }
 
+    const currentTime = new Date();
+    if (isEmailVerified.expiredTime < currentTime) {
+      throw new BadRequestException(
+        '이메일 인증 후 오랜 시간이 경과하여 재인증이 필요합니다.',
+      );
+    }
+
     const hashedPassword = await hash(password, 10);
     const user = await this.userRepository.save({
       email: email,
       nickname: nickname,
       password: hashedPassword,
     });
+
+    const emailToken = await this.emailTokenRepository.findOne({
+      where: { email: email },
+    });
+    // 회원가입 완료 시 emailToken 삭제
+    await this.emailTokenRepository.remove(emailToken);
 
     return user;
   }

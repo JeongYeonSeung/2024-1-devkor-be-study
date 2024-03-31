@@ -14,4 +14,7 @@ export class EmailTokenEntity extends CommonEntity {
 
   @Column()
   isVerified: boolean;
+
+  @Column()
+  expiredTime: Date;
 }
