@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Injectable,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -86,5 +87,14 @@ export class AuthService {
     user.refreshToken = newRefreshToken;
     await this.userRepository.save(user);
     return { accessToken, refreshToken: newRefreshToken };
+  }
+
+  async logout(id: number) {
+    const user = await this.userRepository.findOne({ where: { userId: id } });
+    if (!user) throw new NotFoundException('존재하지 않는 유저입니다.');
+
+    // refreshToken 삭제
+    user.refreshToken = null;
+    await this.userRepository.save(user);
   }
 }
