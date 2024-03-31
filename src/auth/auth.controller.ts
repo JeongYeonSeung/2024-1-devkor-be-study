@@ -1,5 +1,5 @@
 import { AuthService } from './auth.service';
-import { Controller, Post, Req, UseGuards } from '@nestjs/common';
+import { Controller, Delete, Post, Req, UseGuards } from '@nestjs/common';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { JwtRefreshAuthGuard } from './guards/jwt-refresh.guard';
 import { JwtAccessAuthGuard } from './guards/jwt-access.guard';
@@ -33,5 +33,13 @@ export class AuthController {
   async logout(@Req() req) {
     const user = req?.user;
     return await this.authService.logout(user.id);
+  }
+
+  // 회원 탈퇴 (access token은 FE에서 삭제)
+  @UseGuards(JwtAccessAuthGuard)
+  @Delete('user-info')
+  async deleteUser(@Req() req) {
+    const user = req?.user;
+    await this.authService.deleteUser(user.id);
   }
 }
