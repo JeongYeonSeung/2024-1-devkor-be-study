@@ -29,8 +29,8 @@ export class EmailService {
     const emailOptions: EmailOptions = {
       from: process.env.EMAIL_USER,
       to: email,
-      subject: '가입 인증 메일',
-      html: `<h1> 인증 코드를 입력하면 가입 인증이 완료됩니다.</h1><br/>${verifyToken}`,
+      subject: '인증 메일',
+      html: `<h1> 인증 코드를 입력하면 인증이 완료됩니다.</h1><br/>${verifyToken}`,
     };
 
     return await this.transporter.sendMail(emailOptions);
