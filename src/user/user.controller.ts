@@ -2,6 +2,7 @@ import { Body, Controller, Post } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UserService } from './user.service';
 import { VerifyEmailDto } from './dto/verify-email.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 
 @Controller('user')
 export class UserController {
@@ -33,10 +34,16 @@ export class UserController {
       return true;
     }
   }
-
+  // 먼저 이메일 인증 필요
   @Post('register')
   async createUser(@Body() dto: CreateUserDto): Promise<void> {
     const { email, nickname, password } = dto;
     await this.userService.createUser(email, nickname, password);
+  }
+  // 먼저 이메일 인증 필요
+  @Post('change-password')
+  async changePassword(@Body() dto: ChangePasswordDto): Promise<void> {
+    const { email, newPassword } = dto;
+    await this.userService.changePassword(email, newPassword);
   }
 }

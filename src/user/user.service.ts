@@ -130,6 +130,50 @@ export class UserService {
     return user;
   }
 
+  async changePassword(email: string, newPassword: string) {
+    const user = await this.userRepository.findOne({ where: { email: email } });
+
+    if (!user) {
+      throw new BadRequestException('존재하지 않는 유저입니다.');
+    }
+
+    const isEmailVerified = await this.emailTokenRepository.findOne({
+      where: { email },
+    });
+
+    if (!isEmailVerified || !isEmailVerified.isVerified) {
+      throw new BadRequestException('이메일 인증이 필요합니다.');
+    }
+
+    const currentTime = new Date();
+    if (isEmailVerified.expiredTime < currentTime) {
+      throw new BadRequestException(
+        '이메일 인증 후 오랜 시간이 경과하여 재인증이 필요합니다.',
+      );
+    }
+
+    const isPasswordValid = await this.isPasswordValid(newPassword);
+
+    if (newPassword.length < 8) {
+      throw new BadRequestException('비밀번호는 8자 이상이어야 합니다.');
+    }
+
+    if (!isPasswordValid) {
+      throw new BadRequestException('비밀번호는 특수문자를 포함해야 합니다.');
+    }
+
+    const hashedPassword = await hash(newPassword, 10);
+    user.password = hashedPassword;
+    // 재설정한 비밀번호 저장
+    await this.userRepository.save(user);
+
+    const emailToken = await this.emailTokenRepository.findOne({
+      where: { email: email },
+    });
+    // 회원가입 완료 시 emailToken 삭제
+    await this.emailTokenRepository.remove(emailToken);
+  }
+
   // 6자리 랜덤한 토큰 생성
   private async generateRandomToken(): Promise<string> {
     const characters =
