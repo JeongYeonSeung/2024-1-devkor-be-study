@@ -33,7 +33,12 @@ export class PostService {
   async getPostInfo(postId: string, userId: number): Promise<PostInfoResDto> {
     const post = await this.postRepository.findOne({
       where: { postId: Number(postId) },
-      relations: ['comments', 'comments.user'],
+      relations: [
+        'comments',
+        'comments.user',
+        'comments.replies',
+        'comments.replies.user',
+      ],
     });
 
     if (!post) {
@@ -70,7 +75,7 @@ export class PostService {
           replies: comment.replies
             ? comment.replies.map((reply) => ({
                 content: reply.content,
-                nickname: reply.user.nickname,
+                nickname: reply.user ? reply.user.nickname : '',
                 createdDate: reply.createdDate,
               }))
             : [],
