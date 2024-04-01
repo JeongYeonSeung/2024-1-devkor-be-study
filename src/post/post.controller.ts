@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Post,
@@ -35,5 +36,12 @@ export class PostController {
     const postInfo = await this.postService.getPostInfo(postId, user.id);
 
     return postInfo;
+  }
+
+  @UseGuards(JwtAccessAuthGuard)
+  @Delete('/:postId')
+  async deletePost(@Param('postId') postId: string, @Req() req) {
+    const user = req.user;
+    await this.postService.deletePost(Number(postId), user.id);
   }
 }

@@ -1,5 +1,9 @@
 import { ViewEntity } from './../entities/view.entity';
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PostEntity } from 'src/entities/post.entity';
 import { UserEntity } from 'src/entities/user.entity';
@@ -40,48 +44,80 @@ export class PostService {
         'comments.replies.user',
         'likes',
         'likes.user',
+        'views',
+        'views.user',
       ],
     });
 
     if (!post) {
-      throw new NotFoundException('게시글 정보를 찾을 수 없습니다.');
+      throw new NotFoundException(
+        '게시글이 삭제되었거나 게시글 정보를 찾을 수 없습니다.',
+      );
     }
 
     const user = await this.userRepository.findOne({
       where: { userId: userId },
     });
 
+    // 맛있는 스파게티... 추후 수정하겠습니다...
+    const postInfoRes = new PostInfoResDto();
+
+    postInfoRes.nickname = user.nickname;
+    postInfoRes.createdAt = post.createdAt.toISOString();
+    postInfoRes.views = post.views
+      ? post.views.filter((view) => view.user && view.user.deletedAt == null)
+          .length
+      : 0;
+    postInfoRes.title = post.title;
+    postInfoRes.likes = post.likes
+      ? post.likes.filter((like) => like.user && like.user.deletedAt == null)
+          .length
+      : 0;
+    postInfoRes.likedUserNicknames = post.likes
+      ? post.likes
+          .filter((like) => like.user && like.user.deletedAt == null)
+          .map((like) => like.user.nickname)
+      : [];
+
+    postInfoRes.commentsAndReplies = post.comments
+      ? post.comments
+          .filter((comment) => comment.user && comment.user.deletedAt == null) // 삭제되지 않은 user의 comments만 포함
+          .map((comment) => ({
+            content: comment.content,
+            nickname: comment.user ? comment.user.nickname : '',
+            createdDate: comment.createdDate,
+            replies: comment.replies
+              ? comment.replies
+                  .filter((reply) => reply.user && reply.user.deletedAt == null) // 삭제되지 않은 user의 replies만 포함
+                  .map((reply) => ({
+                    content: reply.content,
+                    nickname: reply.user ? reply.user.nickname : '',
+                    createdDate: reply.createdDate,
+                  }))
+              : [],
+          }))
+      : [];
     // viewRepository 추가하기
     await this.viewRepository.save({
       post: post,
-      userId: userId,
+      user: user,
     });
 
-    // 시간 너무 오래걸릴거 같은데...최적화 필요.
-    const postInfoRes = new PostInfoResDto();
-    postInfoRes.nickname = user.nickname;
-    postInfoRes.createdAt = post.createdAt.toISOString();
-    postInfoRes.views = post.views ? post.views.length : 0;
-    postInfoRes.title = post.title;
-    postInfoRes.likes = post.likes ? post.likes.length : 0;
-    postInfoRes.likedUserNicknames = post.likes
-      ? post.likes.map((like) => like.user.nickname)
-      : [];
-    postInfoRes.commentsAndReplies = post.comments
-      ? post.comments.map((comment) => ({
-          content: comment.content,
-          nickname: comment.user ? comment.user.nickname : '',
-          createdDate: comment.createdDate,
-          replies: comment.replies
-            ? comment.replies.map((reply) => ({
-                content: reply.content,
-                nickname: reply.user ? reply.user.nickname : '',
-                createdDate: reply.createdDate,
-              }))
-            : [],
-        }))
-      : [];
-
     return postInfoRes;
+  }
+
+  async deletePost(postId: number, userId: number) {
+    const post = await this.postRepository.findOne({
+      where: { postId: postId },
+      relations: ['user'],
+    });
+    if (!post) {
+      throw new NotFoundException('게시글 정보를 찾을 수 없습니다.');
+    }
+    if (post.user.userId !== userId) {
+      throw new UnauthorizedException('삭제 권한이 없습니다.');
+    }
+
+    await this.postRepository.softDelete(postId);
   }
 }
