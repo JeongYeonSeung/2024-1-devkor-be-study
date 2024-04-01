@@ -38,6 +38,8 @@ export class PostService {
         'comments.user',
         'comments.replies',
         'comments.replies.user',
+        'likes',
+        'likes.user',
       ],
     });
 
@@ -63,10 +65,8 @@ export class PostService {
     postInfoRes.title = post.title;
     postInfoRes.likes = post.likes ? post.likes.length : 0;
     postInfoRes.likedUserNicknames = post.likes
-      ? post.likes
-          .filter((like) => !like.deletedAt)
-          .map((like) => like.user.nickname)
-      : []; // 삭제되지 않은 '좋아요' 사용자 닉네임만 포함
+      ? post.likes.map((like) => like.user.nickname)
+      : [];
     postInfoRes.commentsAndReplies = post.comments
       ? post.comments.map((comment) => ({
           content: comment.content,
