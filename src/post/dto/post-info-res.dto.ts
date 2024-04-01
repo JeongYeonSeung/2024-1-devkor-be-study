@@ -6,6 +6,9 @@ export class ReplyResDto {
 
   @IsNotEmpty()
   nickname: string;
+
+  @IsNotEmpty()
+  createdDate: string | null;
 }
 
 export class CommentResDto {
@@ -14,6 +17,9 @@ export class CommentResDto {
 
   @IsNotEmpty()
   nickname: string;
+
+  @IsNotEmpty()
+  createdDate: string | null;
 
   @IsNotEmpty()
   replies: ReplyResDto[];

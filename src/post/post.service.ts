@@ -33,6 +33,7 @@ export class PostService {
   async getPostInfo(postId: string, userId: number): Promise<PostInfoResDto> {
     const post = await this.postRepository.findOne({
       where: { postId: Number(postId) },
+      relations: ['comments', 'comments.user'],
     });
 
     if (!post) {
@@ -62,18 +63,18 @@ export class PostService {
           .map((like) => like.user.nickname)
       : []; // 삭제되지 않은 '좋아요' 사용자 닉네임만 포함
     postInfoRes.commentsAndReplies = post.comments
-      ? post.comments
-          .filter((comment) => !comment.deletedAt) // 삭제되지 않은 댓글만 포함
-          .map((comment) => ({
-            content: comment.content,
-            nickname: comment.user.nickname,
-            replies: comment.replies
-              .filter((reply) => !reply.deletedAt) // 삭제되지 않은 답글만 포함
-              .map((reply) => ({
+      ? post.comments.map((comment) => ({
+          content: comment.content,
+          nickname: comment.user ? comment.user.nickname : '',
+          createdDate: comment.createdDate,
+          replies: comment.replies
+            ? comment.replies.map((reply) => ({
                 content: reply.content,
                 nickname: reply.user.nickname,
-              })),
-          }))
+                createdDate: reply.createdDate,
+              }))
+            : [],
+        }))
       : [];
 
     return postInfoRes;
