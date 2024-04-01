@@ -102,6 +102,7 @@ export class AuthService {
     const user = await this.userRepository.findOne({ where: { userId: id } });
     if (!user) throw new NotFoundException('존재하지 않는 유저입니다.');
 
-    await this.userRepository.remove(user);
+    await this.userRepository.update(id, { refreshToken: null });
+    await this.userRepository.softDelete(id);
   }
 }
