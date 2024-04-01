@@ -24,4 +24,10 @@ export class ReplyEntity extends CommonEntity {
   @ManyToOne(() => CommentEntity, (comment) => comment.replies)
   @JoinColumn({ name: 'comment_id', referencedColumnName: 'commentId' })
   comment: CommentEntity;
+
+  @Column({ name: 'is_deleted' })
+  isDeleted: boolean;
+
+  @Column({ name: 'created_date', nullable: true })
+  createdDate: string;
 }

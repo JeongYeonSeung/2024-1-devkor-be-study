@@ -4,7 +4,7 @@ import {
   JoinColumn,
   ManyToOne,
   OneToMany,
-  PrimaryColumn,
+  PrimaryGeneratedColumn,
 } from 'typeorm';
 import { CommonEntity } from './common.entity';
 import { PostEntity } from './post.entity';
@@ -13,7 +13,7 @@ import { ReplyEntity } from './reply.entity';
 
 @Entity('comment')
 export class CommentEntity extends CommonEntity {
-  @PrimaryColumn({ name: 'comment_id' })
+  @PrimaryGeneratedColumn({ name: 'comment_id' })
   commentId: number;
 
   @Column('varchar', { name: 'content' })
@@ -32,4 +32,7 @@ export class CommentEntity extends CommonEntity {
 
   @Column({ name: 'is_deleted' })
   isDeleted: boolean;
+
+  @Column({ name: 'created_date', nullable: true })
+  createdDate: string;
 }
