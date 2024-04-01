@@ -13,7 +13,7 @@ import { CreateCommentDto } from './dto/create-comment.dto';
 
 @Controller('comment')
 export class CommentController {
-  constructor(private readonly commentservice: CommentService) {}
+  constructor(private readonly commentService: CommentService) {}
 
   @UseGuards(JwtAccessAuthGuard)
   @Post('/:postId')
@@ -23,13 +23,13 @@ export class CommentController {
     @Body() body: CreateCommentDto,
   ) {
     const user = req?.user;
-    await this.commentservice.createComment(postId, user.id, body.content);
+    await this.commentService.createComment(postId, user.id, body.content);
   }
 
   @UseGuards(JwtAccessAuthGuard)
   @Delete('/:commentId')
   async deleteComment(@Param('commentId') commentId: string, @Req() req) {
     const user = req.user;
-    await this.commentservice.deleteComment(Number(commentId), user.id);
+    await this.commentService.deleteComment(Number(commentId), user.id);
   }
 }
