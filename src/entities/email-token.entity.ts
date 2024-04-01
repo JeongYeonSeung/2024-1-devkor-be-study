@@ -1,9 +1,9 @@
 import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
 import { CommonEntity } from './common.entity';
 
-@Entity()
+@Entity('email_token')
 export class EmailTokenEntity extends CommonEntity {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn({ name: 'email_token_id' })
   emailTokenId: number;
 
   @Column({ unique: true })
@@ -12,9 +12,9 @@ export class EmailTokenEntity extends CommonEntity {
   @Column()
   token: string;
 
-  @Column()
+  @Column({ name: 'is_verified' })
   isVerified: boolean;
 
-  @Column()
+  @Column({ name: 'expired_time' })
   expiredTime: Date;
 }
