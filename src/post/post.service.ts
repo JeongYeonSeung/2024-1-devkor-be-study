@@ -9,6 +9,7 @@ import { PostEntity } from 'src/entities/post.entity';
 import { UserEntity } from 'src/entities/user.entity';
 import { Repository } from 'typeorm';
 import { PostInfoResDto } from './dto/post-info-res.dto';
+import { LikeEntity } from 'src/entities/like.entity';
 
 @Injectable()
 export class PostService {
@@ -19,6 +20,8 @@ export class PostService {
     private readonly userRepository: Repository<UserEntity>,
     @InjectRepository(ViewEntity)
     private readonly viewRepository: Repository<ViewEntity>,
+    @InjectRepository(LikeEntity)
+    private readonly likeRepository: Repository<LikeEntity>,
   ) {}
 
   async createPost(userId: number, title: string, content: string) {
@@ -119,5 +122,20 @@ export class PostService {
     }
 
     await this.postRepository.softDelete(postId);
+  }
+
+  async postLikeToggle(postId: number, userId: number) {
+    const like = await this.likeRepository.findOne({
+      where: { post: { postId: postId }, user: { userId: userId } },
+    });
+
+    if (like) {
+      await this.likeRepository.delete({ likeId: like.likeId });
+    } else {
+      await this.likeRepository.save({
+        post: { postId: postId },
+        user: { userId: userId },
+      });
+    }
   }
 }
