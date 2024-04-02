@@ -16,14 +16,14 @@ export class CommentController {
   constructor(private readonly commentService: CommentService) {}
 
   @UseGuards(JwtAccessAuthGuard)
-  @Post('/:postId')
-  async createComment(
-    @Param('postId') postId: string,
-    @Req() req,
-    @Body() body: CreateCommentDto,
-  ) {
+  @Post()
+  async createComment(@Req() req, @Body() body: CreateCommentDto) {
     const user = req?.user;
-    await this.commentService.createComment(postId, user.id, body.content);
+    await this.commentService.createComment(
+      Number(body.postId),
+      user.id,
+      body.content,
+    );
   }
 
   @UseGuards(JwtAccessAuthGuard)

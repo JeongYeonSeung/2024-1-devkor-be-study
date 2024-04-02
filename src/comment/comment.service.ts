@@ -20,9 +20,9 @@ export class CommentService {
     private readonly userRepository: Repository<UserEntity>,
   ) {}
 
-  async createComment(postId: string, userId: number, content: string) {
+  async createComment(postId: number, userId: number, content: string) {
     const post = await this.postRepository.findOne({
-      where: { postId: Number(postId) },
+      where: { postId: postId },
     });
     if (!post) {
       throw new NotFoundException('게시글 정보를 찾을 수 없습니다.');
