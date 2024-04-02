@@ -16,15 +16,11 @@ export class ReplyController {
   constructor(private readonly replyService: ReplyService) {}
 
   @UseGuards(JwtAccessAuthGuard)
-  @Post('/:commentId')
-  async createReply(
-    @Param('commentId') commentId: string,
-    @Req() req,
-    @Body() body: CreateReplyDto,
-  ) {
+  @Post()
+  async createReply(@Req() req, @Body() body: CreateReplyDto) {
     const user = req.user;
     await this.replyService.createReply(
-      Number(commentId),
+      Number(body.commentId),
       user.id,
       body.content,
     );
