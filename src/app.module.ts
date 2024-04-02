@@ -8,7 +8,6 @@ import { AuthModule } from './auth/auth.module';
 import { PostModule } from './post/post.module';
 import { CommentModule } from './comment/comment.module';
 import { ReplyModule } from './reply/reply.module';
-import { LikeModule } from './like/like.module';
 
 @Module({
   imports: [
@@ -29,7 +28,6 @@ import { LikeModule } from './like/like.module';
     PostModule,
     CommentModule,
     ReplyModule,
-    LikeModule,
   ],
   controllers: [AppController],
   providers: [AppService],
