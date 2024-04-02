@@ -5,17 +5,31 @@ import {
   Get,
   Param,
   Post,
+  Query,
   Req,
   UseGuards,
+  UsePipes,
+  ValidationPipe,
 } from '@nestjs/common';
 import { PostService } from './post.service';
 import { JwtAccessAuthGuard } from 'src/auth/guards/jwt-access.guard';
 import { CreatePostDto } from './dto/create-post.dto';
 import { PostLikeToggleDto } from './dto/post-like-toggle.dto';
+import { PageOptionsDto } from './dto/page-options.dto';
+import { PageDto } from './dto/page.dto';
+import { PostEntity } from 'src/entities/post.entity';
 
 @Controller('post')
 export class PostController {
   constructor(private readonly postService: PostService) {}
+
+  @Get()
+  @UsePipes(new ValidationPipe({ transform: true }))
+  async getPostList(
+    @Query() pageOptions: PageOptionsDto,
+  ): Promise<PageDto<PostEntity>> {
+    return await this.postService.getPostList(pageOptions);
+  }
 
   // 게시글 생성
   @UseGuards(JwtAccessAuthGuard)

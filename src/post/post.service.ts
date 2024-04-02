@@ -11,6 +11,9 @@ import { UserEntity } from 'src/entities/user.entity';
 import { Repository } from 'typeorm';
 import { PostInfoResDto } from './dto/post-info-res.dto';
 import { LikeEntity } from 'src/entities/like.entity';
+import { PageOptionsDto } from './dto/page-options.dto';
+import { PageMetaDto } from './dto/page-meta.dto';
+import { PageDto } from './dto/page.dto';
 
 @Injectable()
 export class PostService {
@@ -26,6 +29,42 @@ export class PostService {
     private readonly commentService: CommentService,
   ) {}
 
+  async getPostList(
+    pageOptionsDto: PageOptionsDto,
+  ): Promise<PageDto<PostEntity>> {
+    const { sortBy, name, take, skip } = pageOptionsDto;
+
+    const queryBuilder = this.postRepository.createQueryBuilder('post');
+
+    if (name) {
+      queryBuilder.where('post.title LIKE :name', { name: `%${name}%` });
+    }
+
+    if (sortBy) {
+      if (sortBy === 'VIEW') {
+        queryBuilder.orderBy('post.viewCount', 'DESC');
+      } else if (sortBy === 'LIKE') {
+        queryBuilder.orderBy('post.likeCount', 'DESC');
+      } else {
+        queryBuilder.orderBy('post.createdAt', 'DESC');
+      }
+    }
+
+    const [postList, total] = await queryBuilder
+      .take(take)
+      .skip(skip)
+      .getManyAndCount();
+
+    const pageMeta = new PageMetaDto({ pageOptionsDto, total });
+    const last_page = pageMeta.last_page;
+
+    if (last_page >= pageMeta.page) {
+      return new PageDto(postList, pageMeta);
+    } else {
+      throw new NotFoundException('존재하지 않는 페이지 입니다.');
+    }
+  }
+
   async createPost(userId: number, title: string, content: string) {
     const user = await this.userRepository.findOne({
       where: { userId: userId },
@@ -35,6 +74,8 @@ export class PostService {
     post.user = user;
     post.title = title;
     post.content = content;
+    post.likeCount = 0;
+    post.viewCount = 0;
 
     return await this.postRepository.save(post);
   }
@@ -79,6 +120,8 @@ export class PostService {
       user: user,
     });
 
+    post.viewCount += 1;
+    await this.postRepository.save(post);
     return postInfoRes;
   }
 
@@ -102,9 +145,17 @@ export class PostService {
       where: { post: { postId: postId }, user: { userId: userId } },
     });
 
+    const post = await this.postRepository.findOne({
+      where: { postId: postId },
+    });
+
     if (like) {
+      post.likeCount -= 1;
+      await this.postRepository.save(post);
       await this.likeRepository.delete({ likeId: like.likeId });
     } else {
+      post.likeCount += 1;
+      await this.postRepository.save(post);
       await this.likeRepository.save({
         post: { postId: postId },
         user: { userId: userId },

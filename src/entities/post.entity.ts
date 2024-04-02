@@ -35,4 +35,10 @@ export class PostEntity extends CommonEntity {
 
   @OneToMany(() => ViewEntity, (view) => view.post)
   views: ViewEntity[];
+
+  @Column()
+  likeCount: number;
+
+  @Column()
+  viewCount: number;
 }
