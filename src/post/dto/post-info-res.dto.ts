@@ -1,29 +1,5 @@
 import { IsNotEmpty } from 'class-validator';
-
-export class ReplyResDto {
-  @IsNotEmpty()
-  content: string;
-
-  @IsNotEmpty()
-  nickname: string;
-
-  @IsNotEmpty()
-  createdDate: string | null;
-}
-
-export class CommentResDto {
-  @IsNotEmpty()
-  content: string;
-
-  @IsNotEmpty()
-  nickname: string;
-
-  @IsNotEmpty()
-  createdDate: string | null;
-
-  @IsNotEmpty()
-  replies: ReplyResDto[];
-}
+import { CommentResDto } from 'src/dtos/comment-reply-res.dto';
 
 export class PostInfoResDto {
   @IsNotEmpty()
@@ -41,9 +17,12 @@ export class PostInfoResDto {
   @IsNotEmpty()
   content: string;
 
+  @IsNotEmpty()
   likes: number;
 
-  likedUserNicknames: string[];
+  @IsNotEmpty()
+  likedUserList: string[];
 
+  @IsNotEmpty()
   commentsAndReplies: CommentResDto[];
 }

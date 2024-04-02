@@ -1,3 +1,4 @@
+import { CommentService } from './../comment/comment.service';
 import { ViewEntity } from './../entities/view.entity';
 import {
   Injectable,
@@ -22,6 +23,7 @@ export class PostService {
     private readonly viewRepository: Repository<ViewEntity>,
     @InjectRepository(LikeEntity)
     private readonly likeRepository: Repository<LikeEntity>,
+    private readonly commentService: CommentService,
   ) {}
 
   async createPost(userId: number, title: string, content: string) {
@@ -37,19 +39,10 @@ export class PostService {
     return await this.postRepository.save(post);
   }
 
-  async getPostInfo(postId: string, userId: number): Promise<PostInfoResDto> {
+  async getPostInfo(postId: number, userId: number): Promise<PostInfoResDto> {
     const post = await this.postRepository.findOne({
-      where: { postId: Number(postId) },
-      relations: [
-        'comments',
-        'comments.user',
-        'comments.replies',
-        'comments.replies.user',
-        'likes',
-        'likes.user',
-        'views',
-        'views.user',
-      ],
+      where: { postId: postId },
+      relations: ['views'],
     });
 
     if (!post) {
@@ -57,49 +50,29 @@ export class PostService {
         '게시글이 삭제되었거나 게시글 정보를 찾을 수 없습니다.',
       );
     }
+    const postInfoRes = new PostInfoResDto();
+
+    postInfoRes.createdAt = post.createdAt.toISOString();
+    postInfoRes.title = post.title;
+    postInfoRes.content = post.content;
+    postInfoRes.views = post.views ? post.views.length : 0;
 
     const user = await this.userRepository.findOne({
       where: { userId: userId },
     });
-
-    // 맛있는 스파게티... 추후 수정하겠습니다...
-    const postInfoRes = new PostInfoResDto();
-
     postInfoRes.nickname = user.nickname;
-    postInfoRes.createdAt = post.createdAt.toISOString();
-    postInfoRes.views = post.views
-      ? post.views.filter((view) => view.user && view.user.deletedAt == null)
-          .length
-      : 0;
-    postInfoRes.title = post.title;
-    postInfoRes.likes = post.likes
-      ? post.likes.filter((like) => like.user && like.user.deletedAt == null)
-          .length
-      : 0;
-    postInfoRes.likedUserNicknames = post.likes
-      ? post.likes
-          .filter((like) => like.user && like.user.deletedAt == null)
-          .map((like) => like.user.nickname)
-      : [];
 
-    postInfoRes.commentsAndReplies = post.comments
-      ? post.comments
-          .filter((comment) => comment.user && comment.user.deletedAt == null) // 삭제되지 않은 user의 comments만 포함
-          .map((comment) => ({
-            content: comment.content,
-            nickname: comment.user ? comment.user.nickname : '',
-            createdDate: comment.createdDate,
-            replies: comment.replies
-              ? comment.replies
-                  .filter((reply) => reply.user && reply.user.deletedAt == null) // 삭제되지 않은 user의 replies만 포함
-                  .map((reply) => ({
-                    content: reply.content,
-                    nickname: reply.user ? reply.user.nickname : '',
-                    createdDate: reply.createdDate,
-                  }))
-              : [],
-          }))
-      : [];
+    const likeList = await this.likeRepository.find({
+      where: { post: { postId: postId } },
+      relations: ['user'],
+    });
+    const likedUserList = likeList.map((like) => like.user.nickname);
+    postInfoRes.likes = likeList ? likeList.length : 0;
+    postInfoRes.likedUserList = likedUserList ? likedUserList : [];
+
+    postInfoRes.commentsAndReplies =
+      await this.commentService.getCommentListByPostId(Number(postId));
+
     // viewRepository 추가하기
     await this.viewRepository.save({
       post: post,

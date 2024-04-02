@@ -34,7 +34,10 @@ export class PostController {
   @Get('/:postId')
   async getPostInfo(@Param('postId') postId: string, @Req() req) {
     const user = req.user;
-    const postInfo = await this.postService.getPostInfo(postId, user.id);
+    const postInfo = await this.postService.getPostInfo(
+      Number(postId),
+      user.id,
+    );
 
     return postInfo;
   }

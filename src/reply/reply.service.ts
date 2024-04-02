@@ -8,6 +8,7 @@ import { CommentEntity } from 'src/entities/comment.entity';
 import { ReplyEntity } from 'src/entities/reply.entity';
 import { UserEntity } from 'src/entities/user.entity';
 import { Repository } from 'typeorm';
+import { ReplyResDto } from 'src/dtos/comment-reply-res.dto';
 
 @Injectable()
 export class ReplyService {
@@ -63,5 +64,33 @@ export class ReplyService {
     reply.user = null;
     reply.createdDate = null;
     await this.replyRepository.save(reply);
+  }
+
+  async getReplyListByCommentId(commentId: number): Promise<ReplyResDto[]> {
+    const comment = await this.commentRepository.findOne({
+      where: { commentId: commentId },
+    });
+
+    if (!comment) {
+      throw new NotFoundException('댓글 정보를 찾을 수 없습니다.');
+    }
+
+    const replyList = await this.replyRepository.find({
+      where: { comment: { commentId: commentId } },
+      relations: ['user'],
+      order: { createdAt: 'ASC' },
+    });
+
+    const parsedReplyList = replyList
+      ? replyList.map(async (reply) => {
+          return {
+            content: reply.isDeleted ? '삭제된 답글입니다.' : reply.content,
+            nickname: reply.isDeleted ? '' : reply.user.nickname,
+            createdDate: reply.isDeleted ? '' : reply.createdDate,
+          };
+        })
+      : [];
+
+    return Promise.all(parsedReplyList);
   }
 }
