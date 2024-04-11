@@ -1,7 +1,8 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { CommonEntity } from './common.entity';
+import { PostEntity } from './post.entity';
 
-@Entity('User')
+@Entity('user')
 export class UserEntity extends CommonEntity {
   @PrimaryGeneratedColumn({ name: 'user_id' })
   userId: number;
@@ -14,4 +15,10 @@ export class UserEntity extends CommonEntity {
 
   @Column('varchar', { name: 'password', unique: false, nullable: false })
   password: string;
+
+  @Column('varchar', { name: 'refresh_token', nullable: true })
+  refreshToken: string;
+
+  @OneToMany(() => PostEntity, (post) => post.user)
+  posts: PostEntity[];
 }
